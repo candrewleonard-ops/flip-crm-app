@@ -1,0 +1,43 @@
+{
+  "name": "flipcrm-desktop-mac",
+  "version": "0.1.0",
+  "description": "FlipCRM Desktop for macOS — Electron wrapper for the Reinnovation Homes CRM",
+  "main": "main.js",
+  "author": "Reinnovation Homes",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build:next": "cd ../site && cross-env DESKTOP_BUILD=true next build && cd ../desktop-mac && node copy-standalone.js",
+    "build:mac": "npm run build:next && electron-builder --mac zip --x64",
+    "build:mac-arm": "npm run build:next && electron-builder --mac zip --arm64",
+    "build:mac-universal": "npm run build:next && electron-builder --mac zip --x64 --arm64",
+    "build:dmg": "npm run build:next && electron-builder --mac dmg --x64",
+    "dev": "cross-env ELECTRON_DEV=true electron ."
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.reinnovationhomes.flipcrm",
+    "productName": "FlipCRM",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "next-app/**/*"],
+    "extraResources": [{ "from": "next-app", "to": "next-app" }],
+    "mac": {
+      "target": [{ "target": "zip", "arch": ["x64", "arm64"] }],
+      "artifactName": "FlipCRM-${version}-mac-${arch}.${ext}",
+      "category": "public.app-category.business",
+      "icon": null
+    },
+    "dmg": {
+      "title": "FlipCRM",
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ]
+    }
+  }
+}

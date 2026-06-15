@@ -1,0 +1,32 @@
+{
+  "name": "flipcrm-desktop",
+  "version": "0.1.0",
+  "description": "FlipCRM Desktop — Electron wrapper for the Reinnovation Homes CRM (Windows)",
+  "main": "main.js",
+  "author": "Reinnovation Homes",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build:next": "cd ../site && cross-env DESKTOP_BUILD=true next build && cd ../desktop && node copy-standalone.js",
+    "build:exe": "npm run build:next && electron-builder --win --x64",
+    "build:portable": "npm run build:next && electron-builder --win portable --x64",
+    "dev": "cross-env ELECTRON_DEV=true electron ."
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.reinnovationhomes.flipcrm",
+    "productName": "FlipCRM",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "next-app/**/*"],
+    "extraResources": [{ "from": "next-app", "to": "next-app" }],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "artifactName": "FlipCRM-Setup-${version}.${ext}"
+    }
+  }
+}

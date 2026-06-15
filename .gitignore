@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+desktop/next-app/
+desktop-mac/next-app/
+desktop/dist/
+desktop-mac/dist/
+
+# Next.js build artifacts (inside the site submodule, just in case)
+site/.next/
+site/out/
+
+# OS / editor
+.DS_Store
+*.log
