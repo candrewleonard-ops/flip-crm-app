@@ -11,12 +11,15 @@
     "build:next": "cd ../site && cross-env DESKTOP_BUILD=true next build && cd ../desktop && node copy-standalone.js",
     "build:exe": "npm run build:next && electron-builder --win --x64",
     "build:portable": "npm run build:next && electron-builder --win portable --x64",
-    "dev": "cross-env ELECTRON_DEV=true electron ."
+    "dev": "cross-env ELECTRON_DEV=true electron .",
+    "dev:all": "concurrently -k -n SITE,APP -c blue,green \"npm --prefix ../site run dev\" \"wait-on http://localhost:3000 && cross-env ELECTRON_DEV=true electron .\""
   },
   "devDependencies": {
+    "concurrently": "^9.1.0",
     "cross-env": "^7.0.3",
     "electron": "^33.0.0",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "wait-on": "^8.0.1"
   },
   "build": {
     "appId": "com.reinnovationhomes.flipcrm.desktop",
