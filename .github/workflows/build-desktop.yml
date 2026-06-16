@@ -72,6 +72,9 @@ jobs:
 
       - name: Build Next.js standalone
         working-directory: site
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://hupvolxjnvmlctswwvye.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1cHZvbHhqbnZtbGN0c3d3dnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MzA2ODEsImV4cCI6MjA5NDAwNjY4MX0.JadEq79hzmO3qX3IZmog1j-7-C5uxCKwGKvyQwHEqf8
         run: npx cross-env DESKTOP_BUILD=true npm run build
 
       - name: Copy standalone into desktop
