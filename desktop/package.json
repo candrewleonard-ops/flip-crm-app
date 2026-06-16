@@ -19,14 +19,20 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "com.reinnovationhomes.flipcrm",
-    "productName": "FlipCRM",
+    "appId": "com.reinnovationhomes.flipcrm.desktop",
+    "productName": "FlipCRM Desktop",
     "directories": { "output": "dist" },
     "files": ["main.js", "preload.js", "next-app/**/*"],
     "extraResources": [{ "from": "next-app", "to": "next-app" }],
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],
-      "artifactName": "FlipCRM-Setup-${version}.${ext}"
+      "artifactName": "FlipCRM-Desktop-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "menuCategory": false,
+      "shortcutName": "FlipCRM Desktop"
     }
   }
 }
