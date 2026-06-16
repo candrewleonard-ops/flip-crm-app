@@ -66,7 +66,9 @@ jobs:
 
       - name: Install website dependencies
         working-directory: site
-        run: npm install
+        run: |
+          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
+          npm install
 
       - name: Build Next.js standalone
         working-directory: site
