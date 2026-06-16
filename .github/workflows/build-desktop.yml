@@ -14,8 +14,9 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive   # pull the `site` submodule (the website source)
+
+      - name: Clone site (Projectmanagement)
+        run: git clone https://github.com/candrewleonard-ops/Projectmanagement.git site
 
       - uses: actions/setup-node@v4
         with:
@@ -55,8 +56,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Clone site (Projectmanagement)
+        run: git clone https://github.com/candrewleonard-ops/Projectmanagement.git site
 
       - uses: actions/setup-node@v4
         with:
