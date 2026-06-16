@@ -1,13 +1,13 @@
-// Copies the Next.js standalone build output (from the `site` submodule)
+// Copies the Next.js standalone build output (from the in-repo `app/`)
 // into desktop/next-app so electron-builder can package it with the .exe.
 const fs = require("fs");
 const path = require("path");
 
-// The Next.js website now lives in the `site/` git submodule at repo root.
-const siteRoot = path.resolve(__dirname, "..", "site");
-const srcStandalone = path.join(siteRoot, ".next", "standalone");
-const srcStatic = path.join(siteRoot, ".next", "static");
-const srcPublic = path.join(siteRoot, "public");
+// The standalone Next.js app lives in `app/` at the repo root.
+const appRoot = path.resolve(__dirname, "..", "app");
+const srcStandalone = path.join(appRoot, ".next", "standalone");
+const srcStatic = path.join(appRoot, ".next", "static");
+const srcPublic = path.join(appRoot, "public");
 const dest = path.join(__dirname, "next-app");
 const destStatic = path.join(dest, ".next", "static");
 const destPublic = path.join(dest, "public");
@@ -31,8 +31,8 @@ console.log("[copy-standalone] cleaning desktop/next-app");
 rimraf(dest);
 
 if (!fs.existsSync(srcStandalone)) {
-  console.error("[copy-standalone] site/.next/standalone not found.");
-  console.error("[copy-standalone] Did the submodule build run? Try: cd ../site && DESKTOP_BUILD=true next build");
+  console.error("[copy-standalone] app/.next/standalone not found.");
+  console.error("[copy-standalone] Run the app build first: npm --prefix ../app run build:desktop");
   process.exit(1);
 }
 

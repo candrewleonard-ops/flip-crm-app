@@ -1,4 +1,4 @@
-name: Build Desktop Apps
+name: Build Desktop App
 
 on:
   workflow_dispatch:        # manual trigger from GitHub UI
@@ -10,120 +10,58 @@ permissions:
   contents: write
 
 jobs:
-  build-mac:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Clone site (Projectmanagement)
-        run: git clone https://github.com/candrewleonard-ops/Projectmanagement.git site
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install website dependencies
-        working-directory: site
-        run: npm install
-
-      - name: Build Next.js standalone
-        working-directory: site
-        run: DESKTOP_BUILD=true npm run build
-
-      - name: Copy standalone into desktop-mac
-        run: node desktop-mac/copy-standalone.js
-
-      - name: Install Electron dependencies
-        working-directory: desktop-mac
-        run: npm install
-
-      - name: Build macOS apps
-        working-directory: desktop-mac
-        run: |
-          npx electron-builder --mac dmg zip --x64
-          npx electron-builder --mac dmg zip --arm64
-
-      - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: FlipCRM-macOS
-          path: |
-            desktop-mac/dist/*.dmg
-            desktop-mac/dist/*.zip
-          retention-days: 30
-
   build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clone site (Projectmanagement)
-        run: git clone https://github.com/candrewleonard-ops/Projectmanagement.git site
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install website dependencies
-        working-directory: site
-        run: |
-          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
-          npm install
+      - name: Install app dependencies
+        run: npm --prefix app install
 
-      - name: Build Next.js standalone
-        working-directory: site
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: https://hupvolxjnvmlctswwvye.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1cHZvbHhqbnZtbGN0c3d3dnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MzA2ODEsImV4cCI6MjA5NDAwNjY4MX0.JadEq79hzmO3qX3IZmog1j-7-C5uxCKwGKvyQwHEqf8
-        run: npx cross-env DESKTOP_BUILD=true npm run build
+      - name: Build Next.js standalone (in-repo app)
+        run: npm --prefix app run build:desktop
 
       - name: Copy standalone into desktop
         run: node desktop/copy-standalone.js
 
       - name: Install Electron dependencies
-        working-directory: desktop
-        run: npm install
+        run: npm --prefix desktop install
 
       - name: Build Windows installer
         working-directory: desktop
         run: npx electron-builder --win --x64
 
-      - name: Upload Windows artifacts
+      - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FlipCRM-Windows
-          path: |
-            desktop/dist/*.exe
+          name: FlipCRM-Desktop-Windows
+          path: desktop/dist/*.exe
           retention-days: 30
 
   release:
-    needs: [build-mac, build-windows]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - name: Download all artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: FlipCRM ${{ github.ref_name }}
+          name: FlipCRM Desktop ${{ github.ref_name }}
           body: |
-            ## FlipCRM Desktop Installer
+            ## FlipCRM Desktop — standalone installer
 
-            **macOS:**
-            - `FlipCRM-*-mac-arm64.dmg` — Apple Silicon Macs (M1/M2/M3/M4)
-            - `FlipCRM-*-mac-x64.dmg` — Intel Macs
-            - `.zip` versions also included (unzip and drag to Applications)
+            - `FlipCRM-Desktop-Setup-*.exe` — Windows installer
 
-            **Windows:**
-            - `FlipCRM-Setup-*.exe` — Windows installer
-
-            ### How to install
-            **Mac:** Download the `.dmg`, open it, drag FlipCRM to Applications. First launch: right-click > Open.
-            **Windows:** Download the `.exe`, double-click, follow the installer.
-          files: |
-            FlipCRM-macOS/*
-            FlipCRM-Windows/*
+            Installs as **FlipCRM Desktop** (side-by-side; does not replace any
+            existing app). No login required — opens straight to the dashboard
+            with local data.
+          files: FlipCRM-Desktop-Windows/*
           draft: false
           prerelease: false

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <defs>
+    <linearGradient id="wt-blue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#93C5FD"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="wt-mix" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="50%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="wt-peak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E0F2FE"/>
+      <stop offset="100%" stop-color="#BAE6FD" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+  <!-- Mountain backdrop -->
+  <path d="M80 170 L122 60 L164 170 Z" fill="url(#wt-peak)"/>
+  <path d="M114 90 L122 60 L132 92 L124 102 Z" fill="#ffffff"/>
+  <!-- W left stroke (blue) -->
+  <path d="M40 70 Q50 60 62 70 L88 168 Q90 178 80 182 Q68 184 64 174 L40 90 Z" fill="url(#wt-blue)"/>
+  <!-- W second stroke up to middle peak -->
+  <path d="M80 182 Q90 178 96 168 L112 110 Q116 100 122 100 Q128 100 132 110 L148 168 Q152 178 142 182 Q132 184 128 174 L122 140 L116 174 Q112 184 102 182 Z" fill="url(#wt-blue)" opacity="0.9"/>
+  <!-- W right stroke (gradient) -->
+  <path d="M142 182 Q152 178 154 168 L172 100 Q176 90 186 92 Q196 96 194 106 L180 158 Z" fill="url(#wt-mix)"/>
+  <!-- Arrow shaft trending up-right -->
+  <path d="M180 158 L196 102 L172 116 L168 100 L210 76 L218 118 L202 108 L196 158 Z" fill="url(#wt-mix)"/>
+</svg>

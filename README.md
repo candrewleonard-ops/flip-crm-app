@@ -1,73 +1,62 @@
-# FlipCRM — Desktop App
+# FlipCRM Desktop — Standalone App
 
-Standalone repository for the **FlipCRM** desktop application (Windows `.exe` and macOS `.dmg`/`.zip`).
-This is the Electron wrapper around the Reinnovation Homes / FlipCRM Next.js web app.
+A **self-contained, private desktop CRM** (Windows `.exe`). Everything it needs lives in this one
+repository — there is **no website link, no git submodule, no sign-in, and no Supabase**. The app
+opens straight to the dashboard and stores all data **locally** on the machine.
 
-The website itself lives in its own repository (**Projectmanagement**) and continues to deploy to
-Cloudflare independently. This repo only builds the *desktop* version, pulling the website source in
-as a git submodule so the two stay cleanly separated.
+> This used to be a thin Electron wrapper that pulled the website's code from the `Projectmanagement`
+> repo. It is now fully decoupled: the app code lives here in `app/` and evolves independently of the
+> website. Changes here never touch the website, and vice-versa.
 
 ## Structure
 
 ```
 flip-crm-app/
-├── site/            ← git submodule → candrewleonard-ops/Projectmanagement (the Next.js website)
-├── desktop/         ← Electron wrapper for Windows (builds FlipCRM-Setup-*.exe)
-├── desktop-mac/     ← Electron wrapper for macOS (builds .dmg / .zip)
-└── .github/workflows/build-desktop.yml  ← CI that builds installers on a version tag
+├── app/        ← the Next.js CRM (local data only — no login, no Supabase)
+├── desktop/    ← Electron wrapper that packages app/ into FlipCRM-Desktop-Setup-*.exe
+├── package.json ← one-command setup / dev / build
+└── .github/workflows/build-desktop.yml  ← CI that builds the .exe on a version tag
 ```
 
-## First-time setup (after cloning)
-
-The website source is a submodule, so clone with `--recurse-submodules`, or initialize it after cloning:
+## First-time setup
 
 ```bash
-git clone --recurse-submodules https://github.com/candrewleonard-ops/flip-crm-app.git
-# or, if already cloned:
-git submodule update --init --recursive
+git clone https://github.com/candrewleonard-ops/flip-crm-app.git
+cd flip-crm-app
+npm run setup        # installs app/ and desktop/ dependencies
 ```
 
-## Building locally
+## Daily development — one command
 
-### Windows
 ```bash
-cd desktop
-npm install
-cd ../site && npm install && cd ..
-npm --prefix desktop run build:exe   # builds desktop/dist/FlipCRM-Setup-<version>.exe
+npm run dev
 ```
 
-### macOS
+This starts the app and opens it in a desktop window automatically (it waits for the app to be ready
+first). Edit anything under `app/`, save, and the window hot-reloads. No login, no second terminal.
+
+## Build the installer — one command
+
 ```bash
-cd desktop-mac
-npm install
-cd ../site && npm install && cd ..
-npm --prefix desktop-mac run build:dmg   # builds desktop-mac/dist/*.dmg + *.zip
+npm run build        # produces desktop/dist/FlipCRM-Desktop-Setup-<version>.exe
 ```
 
-## Building via GitHub Actions (recommended)
+Run that `.exe` to install **FlipCRM Desktop**. It installs side-by-side and does **not** replace any
+other app you may have. Because there's no login, it opens straight to the dashboard.
 
-Push a version tag and CI builds Windows + macOS installers and attaches them to a GitHub Release:
+## Build via GitHub Actions (optional)
+
+Push a version tag and CI builds the Windows installer and attaches it to a GitHub Release:
 
 ```bash
 git tag v0.1.1
 git push origin v0.1.1
 ```
 
-You can also trigger it manually from the **Actions** tab → **Build Desktop Apps** → **Run workflow**.
+Or trigger it manually: **Actions** tab → **Build Desktop App** → **Run workflow**.
 
-## Updating to the latest website version
+## Data
 
-The desktop app builds against whatever commit the `site` submodule is pinned to. To pull in the
-latest website changes:
-
-```bash
-cd site
-git pull origin main
-cd ..
-git add site
-git commit -m "Update site submodule to latest"
-git push
-```
-
-The website repository (Projectmanagement) and its Cloudflare deployment are never affected by this repo.
+All data is stored locally (in the app's own storage) and seeded with sample projects so the app is
+usable immediately. A real local database can be added later without changing any screens — every read
+and write already goes through a single store (`app/src/lib/store.tsx`).
