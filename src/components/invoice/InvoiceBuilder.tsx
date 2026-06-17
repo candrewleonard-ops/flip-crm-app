@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, FileDown, X } from "lucide-react";
+import { Plus, Trash2, FileDown } from "lucide-react";
 import type { Invoice, InvoiceLineItem, InvoiceStatus } from "../../lib/types";
 import { useStore } from "../../lib/store";
 import { useToast } from "../ui/Toast";

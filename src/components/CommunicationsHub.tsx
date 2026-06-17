@@ -14,7 +14,6 @@ import {
   CircleDot,
   Inbox,
   CalendarDays,
-  X,
 } from "lucide-react";
 import { useStore } from "../lib/store";
 import type { TaskItem, Project, Contractor, Communication, CommType } from "../lib/types";
