@@ -91,6 +91,7 @@ export interface Project {
   // Optional user-created subfolders within this project's main folders
   // (used to group tasks / documents, e.g. "Upstairs Bath", "Kitchen").
   subfolders?: ProjectSubfolder[];
+  vital?: ProjectVital;
 }
 
 export interface ProjectSubfolder {
@@ -99,6 +100,23 @@ export interface ProjectSubfolder {
   // which main folder this grouping lives under
   parent: "renovation" | "information";
   color?: string;
+}
+
+// Project "Vital Information" tab (utilities, key location, notes). Optional &
+// additive — the canonical Project fields above are unchanged.
+export interface ProjectVital {
+  keyLocation?: string;
+  notes?: string;
+  electricProvider?: string;
+  electricAccount?: string;
+  waterProvider?: string;
+  waterAccount?: string;
+  gasProvider?: string;
+  gasAccount?: string;
+  sewerProvider?: string;
+  sewerAccount?: string;
+  trashProvider?: string;
+  trashAccount?: string;
 }
 
 export type TaskStatus =
