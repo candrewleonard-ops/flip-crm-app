@@ -42,7 +42,16 @@ export function Projects() {
         subtitle={`${db.projects.length} properties across ${db.folders.length} folders`}
         actions={
           <>
-            <button className="btn btn-outline text-sm" onClick={() => store.addFolder({ name: window.prompt("New folder name") || "New Folder" }) && toast.success("Folder created")}>
+            <button
+              className="btn btn-outline text-sm"
+              onClick={() => {
+                const name = window.prompt("New folder name");
+                if (name?.trim()) {
+                  store.addFolder({ name: name.trim() });
+                  toast.success("Folder created");
+                }
+              }}
+            >
               <FolderPlus className="w-4 h-4" /> New Folder
             </button>
             <button className="btn btn-primary text-sm" onClick={() => { setCreateFolder(undefined); setCreating(true); }}>

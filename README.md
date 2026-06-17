@@ -1,62 +1,105 @@
-# FlipCRM Desktop — Standalone App
+# FlipCRM Desktop
 
-A **self-contained, private desktop CRM** (Windows `.exe`). Everything it needs lives in this one
-repository — there is **no website link, no git submodule, no sign-in, and no Supabase**. The app
-opens straight to the dashboard and stores all data **locally** on the machine.
+A **standalone, offline Windows desktop CRM** for a real-estate fix-&-flip / rehab
+business. No login, no cloud, no accounts, no server — it opens straight to the
+dashboard and stores **all data locally** on the machine it's installed on.
 
-> This used to be a thin Electron wrapper that pulled the website's code from the `Projectmanagement`
-> repo. It is now fully decoupled: the app code lives here in `app/` and evolves independently of the
-> website. Changes here never touch the website, and vice-versa.
+- 🖥️ One real `.exe` (NSIS installer), installs side-by-side as **FlipCRM Desktop**
+- 🔒 No authentication, no Supabase, no internet required
+- 💾 Local JSON database + a real media folder (photos / videos / PDFs / receipts
+  are saved as **actual files on disk**, never as base64 in the database)
+- 👤 Single user
 
-## Structure
+## Tech stack
 
-```
-flip-crm-app/
-├── app/        ← the Next.js CRM (local data only — no login, no Supabase)
-├── desktop/    ← Electron wrapper that packages app/ into FlipCRM-Desktop-Setup-*.exe
-├── package.json ← one-command setup / dev / build
-└── .github/workflows/build-desktop.yml  ← CI that builds the .exe on a version tag
-```
+Electron + electron-builder · Vite + React 19 + TypeScript · Tailwind CSS v4 ·
+react-router-dom (hash router) · lucide-react · recharts · date-fns · uuid.
 
-## First-time setup
+## Get started (two commands, that's it)
 
 ```bash
-git clone https://github.com/candrewleonard-ops/flip-crm-app.git
-cd flip-crm-app
-npm run setup        # installs app/ and desktop/ dependencies
+npm install      # one-time setup
+npm run dev      # work on it — opens the desktop window with hot reload
 ```
-
-## Daily development — one command
 
 ```bash
-npm run dev
+npm run build    # produces dist/FlipCRM-Desktop-Setup-<version>.exe
 ```
 
-This starts the app and opens it in a desktop window automatically (it waits for the app to be ready
-first). Edit anything under `app/`, save, and the window hot-reloads. No login, no second terminal.
+`npm run dev` runs Vite and launches Electron together (via `vite-plugin-electron`)
+pointed at the dev server, so the window hot-reloads as you edit `src/`.
+`npm run build` type-checks, bundles the renderer + Electron, and runs
+electron-builder to produce the Windows installer in `dist/`.
 
-## Build the installer — one command
+> **Building the `.exe`:** electron-builder produces the Windows installer when run
+> **on Windows**. If you're not on Windows, push a `v*` tag (or run the **Build
+> Desktop App** workflow in the Actions tab) and GitHub Actions builds the
+> installer for you on a Windows runner and attaches it to a Release.
 
-```bash
-npm run build        # produces desktop/dist/FlipCRM-Desktop-Setup-<version>.exe
+## Where your data lives
+
+Everything is stored in Electron's per-user `userData` directory:
+
+```
+%APPDATA%\FlipCRM Desktop\
+├── flipcrm-db.json        ← the database (atomic writes; debounced ~400ms)
+└── media\<projectId>\…     ← real photos, videos, PDFs, receipts, renders
 ```
 
-Run that `.exe` to install **FlipCRM Desktop**. It installs side-by-side and does **not** replace any
-other app you may have. Because there's no login, it opens straight to the dashboard.
+Open it any time from **Admin & Settings → Open data folder**. Photos/videos/PDFs
+render in-app through a custom `media://` protocol that maps to these files.
+**Settings** also has **Export backup** / **Import backup** (a portable copy of the
+db + media folder) and **Reset to sample data**.
 
-## Build via GitHub Actions (optional)
+## What's inside
 
-Push a version tag and CI builds the Windows installer and attaches it to a GitHub Release:
+- **Dashboard** — stat cards, the Communications Hub (headline feature), active
+  project cards with over-budget alerts, budget-vs-spent chart, top expenses,
+  weekly to-dos.
+- **Projects** — nested folders (drag projects between them, recolor, rename),
+  and a full project detail screen with two main folders:
+  - *Renovation & Reconstruction*: Active Work Orders · Tasks (list + kanban,
+    microtask checklists, multi-contractor assignment via checkboxes) ·
+    Communications · Contractors · Photos & Videos · 3D Renders
+  - *Project Information*: Vital Information · Expenses (+receipts) · Invoices ·
+    Documents · Photos & Videos
+- **Communications Hub** — one place to message every contractor on active &
+  scheduled work; unread threads float to the top, then active before scheduled,
+  then priority, then date. Broadcast to all, schedule messages, log calls/notes.
+- **Contractors** — directory with trades, ratings, and per-contractor projects,
+  invoices, and message log.
+- **Invoices** — service/pricing catalog builder, auto 25/25/50 milestone split,
+  paid toggles, and local PDF export attached to the invoice.
+- **Passive Income Portfolio** — rentals (PITI, utilities, lease, work orders,
+  full spec sheet, photos) and private notes (loan terms, collateral).
+- **Admin & Settings** — company profile and local data management.
 
-```bash
-git tag v0.1.1
-git push origin v0.1.1
+## Project structure
+
+```
+flipcrm-desktop/
+├── electron/
+│   ├── main.ts          # window, media:// protocol, IPC (db / files / backup)
+│   └── preload.ts       # exposes the typed window.api bridge
+├── src/                 # React renderer
+│   ├── main.tsx, App.tsx
+│   ├── components/       # ui primitives, layout, project/contractor/invoice/portfolio
+│   ├── pages/
+│   ├── lib/              # types, store, seed, catalogs, utils
+│   └── styles/globals.css
+├── index.html
+├── vite.config.ts
+├── electron-builder.yml
+└── package.json
 ```
 
-Or trigger it manually: **Actions** tab → **Build Desktop App** → **Run workflow**.
+## Notes on a few decisions
 
-## Data
-
-All data is stored locally (in the app's own storage) and seeded with sample projects so the app is
-usable immediately. A real local database can be added later without changing any screens — every read
-and write already goes through a single store (`app/src/lib/store.tsx`).
+- **JSON database** (not SQLite) — simplest and dependency-free for a single user;
+  the renderer keeps only file *metadata*, never blobs.
+- **`vite-plugin-electron`** gives the one-command `dev` / `build` workflow from a
+  single `vite.config.ts`.
+- **Backups are folder-based** (a copy of `flipcrm-db.json` + `media/`) so there are
+  no extra dependencies and the backup is easy to drop on a USB drive.
+- If you ever open the renderer in a plain browser (e.g. `vite preview`), it falls
+  back to `localStorage`; file features are desktop-only.

@@ -23,6 +23,7 @@ import { StatCard } from "../components/ui/StatCard";
 import { ProgressBar } from "../components/ui/ProgressBar";
 import { Badge } from "../components/ui/Badge";
 import { CommunicationsHub } from "../components/CommunicationsHub";
+import { WeeklyTodos } from "../components/WeeklyTodos";
 import { money, pct, fullAddress } from "../lib/utils";
 
 export function Dashboard() {
@@ -125,7 +126,7 @@ export function Dashboard() {
       </div>
 
       {/* Charts row */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-6 mb-6">
         <div className="card p-5 lg:col-span-2">
           <h2 className="text-base font-semibold text-slate-900 mb-4">Budget vs. Spent by Project</h2>
           {chartData.length === 0 ? (
@@ -175,6 +176,8 @@ export function Dashboard() {
           )}
         </div>
       </div>
+
+      <WeeklyTodos />
     </div>
   );
 }

@@ -1,10 +1,10 @@
 name: Build Desktop App
 
 on:
-  workflow_dispatch:        # manual trigger from GitHub UI
+  workflow_dispatch: # manual trigger from the Actions tab
   push:
     tags:
-      - 'v*'                # auto-trigger on version tags like v0.1.0
+      - "v*" # auto-build on version tags like v1.0.0
 
 permissions:
   contents: write
@@ -19,27 +19,17 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install app dependencies
-        run: npm --prefix app install
-
-      - name: Build Next.js standalone (in-repo app)
-        run: npm --prefix app run build:desktop
-
-      - name: Copy standalone into desktop
-        run: node desktop/copy-standalone.js
-
-      - name: Install Electron dependencies
-        run: npm --prefix desktop install
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build Windows installer
-        working-directory: desktop
-        run: npx electron-builder --win --x64
+        run: npm run build
 
-      - name: Upload Windows artifact
+      - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: FlipCRM-Desktop-Windows
-          path: desktop/dist/*.exe
+          path: dist/*.exe
           retention-days: 30
 
   release:
@@ -57,11 +47,11 @@ jobs:
           body: |
             ## FlipCRM Desktop — standalone installer
 
-            - `FlipCRM-Desktop-Setup-*.exe` — Windows installer
+            - `FlipCRM-Desktop-Setup-*.exe` — Windows installer (NSIS)
 
-            Installs as **FlipCRM Desktop** (side-by-side; does not replace any
-            existing app). No login required — opens straight to the dashboard
-            with local data.
+            Installs side-by-side as **FlipCRM Desktop** (its own appId, folder,
+            shortcut, and data). No login — opens straight to the dashboard with
+            all data stored locally and offline.
           files: FlipCRM-Desktop-Windows/*
           draft: false
           prerelease: false
