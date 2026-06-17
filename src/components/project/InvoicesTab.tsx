@@ -1,24 +1,25 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { ReceiptText, FolderOpen, ArrowRight } from "lucide-react";
-import type { Project } from "../../lib/types";
+import React, { useState } from "react";
+import { ReceiptText, FolderOpen, Plus } from "lucide-react";
+import type { Project, Invoice } from "../../lib/types";
 import { useStore } from "../../lib/store";
 import { INVOICE_STATUS_META } from "../../lib/labels";
 import { MetaBadge } from "../ui/Badge";
 import { EmptyState } from "../ui/EmptyState";
+import { InvoiceBuilder } from "../invoice/InvoiceBuilder";
 import { money, formatDate, cn } from "../../lib/utils";
 
 export function InvoicesTab({ project }: { project: Project }) {
   const { getProjectInvoices, getContractor } = useStore();
-  const navigate = useNavigate();
   const invoices = getProjectInvoices(project.id);
+  const [building, setBuilding] = useState(false);
+  const [editing, setEditing] = useState<Invoice | null>(null);
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-slate-500">{invoices.length} invoice{invoices.length === 1 ? "" : "s"} for this project</p>
-        <button className="btn btn-primary text-sm" onClick={() => navigate("/invoices")}>
-          Open invoice builder <ArrowRight className="w-4 h-4" />
+        <button className="btn btn-primary text-sm" onClick={() => { setEditing(null); setBuilding(true); }}>
+          <Plus className="w-4 h-4" /> New Invoice
         </button>
       </div>
 
@@ -34,7 +35,7 @@ export function InvoicesTab({ project }: { project: Project }) {
               { label: "Completion", amount: inv.completionAmount, paid: inv.completionPaid },
             ];
             return (
-              <div key={inv.id} className="card p-4">
+              <div key={inv.id} className="card p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setEditing(inv); setBuilding(true); }}>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
                     <div className="flex items-center gap-2">
@@ -46,7 +47,7 @@ export function InvoicesTab({ project }: { project: Project }) {
                   <div className="text-right">
                     <p className="text-lg font-bold text-slate-900">{money(inv.subtotal)}</p>
                     {inv.pdf && (
-                      <button onClick={() => window.api?.files.reveal(inv.pdf!.relPath)} className="text-xs text-blue-600 hover:underline flex items-center gap-1 justify-end">
+                      <button onClick={(e) => { e.stopPropagation(); window.api?.files.reveal(inv.pdf!.relPath); }} className="text-xs text-blue-600 hover:underline flex items-center gap-1 justify-end">
                         <FolderOpen className="w-3 h-3" /> Open PDF
                       </button>
                     )}
@@ -66,6 +67,13 @@ export function InvoicesTab({ project }: { project: Project }) {
           })}
         </div>
       )}
+
+      <InvoiceBuilder
+        open={building}
+        onClose={() => { setBuilding(false); setEditing(null); }}
+        invoice={editing ?? undefined}
+        defaultProjectId={project.id}
+      />
     </div>
   );
 }
