@@ -1,11 +1,40 @@
 {
-  "name": "flipcrm-desktop-standalone",
-  "version": "0.1.0",
+  "name": "flipcrm-desktop",
+  "version": "1.0.0",
   "private": true,
-  "description": "FlipCRM — standalone private desktop app. Self-contained: no website link, no login, local data.",
+  "description": "FlipCRM Desktop — a standalone, offline fix-&-flip / rehab CRM for Windows. No login, no cloud, all data stored locally.",
+  "author": "FlipCRM",
+  "license": "UNLICENSED",
+  "main": "dist-electron/main.js",
   "scripts": {
-    "setup": "npm --prefix app install && npm --prefix desktop install",
-    "dev": "npm --prefix desktop run dev:all",
-    "build": "npm --prefix desktop run build:exe"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && electron-builder --win --x64",
+    "build:dir": "tsc --noEmit && vite build && electron-builder --win --x64 --dir",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.1.1",
+    "recharts": "^2.15.0",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vite-plugin-electron": "^0.29.0",
+    "vite-plugin-electron-renderer": "^0.14.6"
   }
 }

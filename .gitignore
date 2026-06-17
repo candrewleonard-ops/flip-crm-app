@@ -2,13 +2,9 @@
 node_modules/
 
 # Build output
-desktop/next-app/
-desktop/dist/
-
-# Next.js build artifacts (the in-repo app)
-app/.next/
-app/out/
-app/next-env.d.ts
+dist/
+dist-web/
+dist-electron/
 *.tsbuildinfo
 
 # OS / editor

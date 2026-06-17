@@ -1,0 +1,34 @@
+appId: com.flipcrm.desktop.standalone
+productName: FlipCRM Desktop
+copyright: Copyright © 2026 FlipCRM
+
+directories:
+  output: dist
+  buildResources: build-resources
+
+# Only the compiled output ships inside the installer.
+files:
+  - dist-web/**/*
+  - dist-electron/**/*
+  - package.json
+
+asar: true
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: FlipCRM-Desktop-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: FlipCRM Desktop
+  uninstallDisplayName: FlipCRM Desktop ${version}
+  # Side-by-side install: unique GUID so it never overwrites another app.
+  guid: a7f3c9e2-1b4d-4e8a-9c6f-2d5b8e0a1f73
