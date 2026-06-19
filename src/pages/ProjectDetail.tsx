@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Pencil, Trash2, Hammer, Wrench, FolderKanban,
   ListChecks, MessagesSquare, HardHat, Image as ImageIcon, Box,
-  ClipboardList, Receipt, ReceiptText, FileText,
+  ClipboardList, Receipt, FileText,
 } from "lucide-react";
 import { useStore } from "../lib/store";
 import { MetaBadge } from "../components/ui/Badge";
@@ -21,7 +21,6 @@ import { PhotosTab } from "../components/project/PhotosTab";
 import { RendersTab } from "../components/project/RendersTab";
 import { VitalInfoTab } from "../components/project/VitalInfoTab";
 import { ExpensesTab } from "../components/project/ExpensesTab";
-import { InvoicesTab } from "../components/project/InvoicesTab";
 import { DocumentsTab } from "../components/project/DocumentsTab";
 import { ProjectModal } from "../components/project/ProjectModal";
 
@@ -43,7 +42,6 @@ const RENO_TABS: SubTab[] = [
 const INFO_TABS: SubTab[] = [
   { id: "vital", label: "Vital Information", icon: ClipboardList },
   { id: "expenses", label: "Expenses", icon: Receipt },
-  { id: "invoices", label: "Invoices", icon: ReceiptText },
   { id: "documents", label: "Documents", icon: FileText },
   { id: "media", label: "Photos & Videos", icon: ImageIcon },
 ];
@@ -93,7 +91,6 @@ export function ProjectDetail() {
       case "renovation-renders": return <RendersTab project={project} />;
       case "information-vital": return <VitalInfoTab project={project} />;
       case "information-expenses": return <ExpensesTab project={project} />;
-      case "information-invoices": return <InvoicesTab project={project} />;
       case "information-documents": return <DocumentsTab project={project} />;
       case "information-media": return <PhotosTab project={project} />;
       default: return null;

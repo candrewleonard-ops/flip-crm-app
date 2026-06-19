@@ -6,8 +6,6 @@ import {
   Building2,
   HardHat,
   LayoutDashboard,
-  Landmark,
-  ReceiptText,
   MessagesSquare,
   Settings,
   CornerDownLeft,
@@ -43,9 +41,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     const pages: Command[] = [
       { id: "p-dash", label: "Dashboard", icon: LayoutDashboard, to: "/", group: "Pages" },
       { id: "p-proj", label: "Projects", icon: Building2, to: "/projects", group: "Pages" },
-      { id: "p-port", label: "Passive Income Portfolio", icon: Landmark, to: "/portfolio", group: "Pages" },
       { id: "p-con", label: "Contractors", icon: HardHat, to: "/contractors", group: "Pages" },
-      { id: "p-inv", label: "Invoices", icon: ReceiptText, to: "/invoices", group: "Pages" },
       { id: "p-comm", label: "Communications Hub", icon: MessagesSquare, to: "/communications", group: "Pages" },
       { id: "p-set", label: "Admin & Settings", icon: Settings, to: "/settings", group: "Pages" },
     ];

@@ -53,26 +53,22 @@ db + media folder) and **Reset to sample data**.
 
 ## What's inside
 
-- **Dashboard** — stat cards, the Communications Hub (headline feature), active
-  project cards with over-budget alerts, budget-vs-spent chart, top expenses,
-  weekly to-dos.
+- **Dashboard** — stat cards, the Communications Hub (headline feature), and
+  active project cards with over-budget alerts.
 - **Projects** — nested folders (drag projects between them, recolor, rename),
   and a full project detail screen with two main folders:
   - *Renovation & Reconstruction*: Active Work Orders · Tasks (list + kanban,
     microtask checklists, multi-contractor assignment, one-click **Generate
     standard work orders** from templates) · Communications · Contractors ·
     Photos & Videos · 3D Renders
-  - *Project Information*: Vital Information · Expenses (+receipts) · Invoices ·
-    Documents · Photos & Videos
+  - *Project Information*: Vital Information · Expenses · Documents · Photos & Videos
 - **Communications Hub** — one place to message every contractor on active &
   scheduled work; unread threads float to the top, then active before scheduled,
-  then priority, then date. Broadcast to all, schedule messages, log calls/notes.
-- **Contractors** — directory with trades, ratings, and per-contractor projects,
-  invoices, and message log.
-- **Invoices** — service/pricing catalog builder, auto 25/25/50 milestone split,
-  paid toggles, and local PDF export attached to the invoice.
-- **Passive Income Portfolio** — rentals (PITI, utilities, lease, work orders,
-  full spec sheet, photos) and private notes (loan terms, collateral).
+  then priority, then date. Filter by project, log calls/notes/SMS.
+- **Expenses** — clickable expandable rows: assign a payee (who got paid), add
+  free-form notes for context, and attach receipts.
+- **Contractors** — directory with trades, ratings, per-contractor projects, and
+  a message log.
 - **Admin & Settings** — company profile and local data management.
 
 ## Project structure
@@ -84,7 +80,7 @@ flipcrm-desktop/
 │   └── preload.ts       # exposes the typed window.api bridge
 ├── src/                 # React renderer
 │   ├── main.tsx, App.tsx
-│   ├── components/       # ui primitives, layout, project/contractor/invoice/portfolio
+│   ├── components/       # ui primitives, layout, project, contractor
 │   ├── pages/
 │   ├── lib/              # types, store, seed, catalogs, utils
 │   └── styles/globals.css

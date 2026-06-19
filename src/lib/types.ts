@@ -198,6 +198,10 @@ export interface ExpenseItem {
   vendor: string;
   purchasedDate: string;
   receipt?: StoredFile;
+  /** Contractor this expense was paid to (optional). */
+  payeeContractorId?: string;
+  /** Free-form context for the expense (what happened / where we went wrong). */
+  notes?: string;
 }
 
 export type InvoiceStatus = "draft" | "sent" | "approved" | "paid" | "disputed";

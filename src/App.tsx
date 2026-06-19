@@ -9,10 +9,7 @@ import { Projects } from "./pages/Projects";
 import { ProjectDetail } from "./pages/ProjectDetail";
 import { Contractors } from "./pages/Contractors";
 import { ContractorDetail } from "./pages/ContractorDetail";
-import { Invoices } from "./pages/Invoices";
 import { Communications } from "./pages/Communications";
-import { Portfolio } from "./pages/Portfolio";
-import { PortfolioDetail } from "./pages/PortfolioDetail";
 import { Settings } from "./pages/Settings";
 
 function LoadingGate({ children }: { children: React.ReactNode }) {
@@ -43,10 +40,7 @@ export function App() {
                 <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route path="/contractors" element={<Contractors />} />
                 <Route path="/contractors/:id" element={<ContractorDetail />} />
-                <Route path="/invoices" element={<Invoices />} />
                 <Route path="/communications" element={<Communications />} />
-                <Route path="/portfolio" element={<Portfolio />} />
-                <Route path="/portfolio/:id" element={<PortfolioDetail />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
             </Routes>

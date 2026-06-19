@@ -3,9 +3,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Building2,
-  Landmark,
   HardHat,
-  ReceiptText,
   MessagesSquare,
   Settings,
   Hammer,
@@ -23,9 +21,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/projects", label: "Projects", icon: Building2 },
-  { to: "/portfolio", label: "Passive Income", icon: Landmark },
   { to: "/contractors", label: "Contractors", icon: HardHat },
-  { to: "/invoices", label: "Invoices", icon: ReceiptText },
   { to: "/communications", label: "Communications", icon: MessagesSquare },
   { to: "/settings", label: "Admin & Settings", icon: Settings },
 ];

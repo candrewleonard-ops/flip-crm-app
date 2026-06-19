@@ -2,24 +2,22 @@ import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Pencil, Trash2, Star, Phone, Mail, MapPin, Briefcase,
-  Building2, MessageSquare, ReceiptText, HardHat, Send,
+  Building2, MessageSquare, HardHat, Send,
 } from "lucide-react";
 import { useStore } from "../lib/store";
 import type { CommType } from "../lib/types";
 import { Avatar } from "../components/ui/Avatar";
-import { MetaBadge } from "../components/ui/Badge";
 import { EmptyState } from "../components/ui/EmptyState";
 import { useToast } from "../components/ui/Toast";
 import { useConfirm, ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { ContractorModal } from "../components/contractor/ContractorModal";
-import { INVOICE_STATUS_META } from "../lib/labels";
-import { money, timeAgo, fullAddress, cn } from "../lib/utils";
+import { timeAgo, fullAddress, cn } from "../lib/utils";
 
 export function ContractorDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const store = useStore();
-  const { getContractor, getContractorProjects, getContractorComms, getContractorInvoices, getProject, deleteContractor, addCommunication } = store;
+  const { getContractor, getContractorProjects, getContractorComms, deleteContractor, addCommunication } = store;
   const toast = useToast();
   const { state, confirm, close } = useConfirm();
   const [editing, setEditing] = useState(false);
@@ -33,7 +31,6 @@ export function ContractorDetail() {
 
   const projects = getContractorProjects(c.id);
   const comms = getContractorComms(c.id).slice().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  const invoices = getContractorInvoices(c.id);
 
   const logComm = () => {
     if (!msg.trim()) return;
@@ -75,7 +72,7 @@ export function ContractorDetail() {
         {c.notes && <p className="text-sm text-slate-600 mt-3 bg-slate-50 rounded-lg p-3">{c.notes}</p>}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-5">
+      <div className="grid lg:grid-cols-2 gap-5">
         {/* Projects */}
         <div className="card p-4">
           <h2 className="font-semibold text-slate-900 mb-3 flex items-center gap-2"><Building2 className="w-4 h-4 text-blue-600" /> Projects</h2>
@@ -86,24 +83,6 @@ export function ContractorDetail() {
                   <p className="text-sm font-medium text-slate-800 truncate">{p.name}</p>
                   <p className="text-xs text-slate-500 truncate">{fullAddress(p.address)}</p>
                 </Link>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Invoices */}
-        <div className="card p-4">
-          <h2 className="font-semibold text-slate-900 mb-3 flex items-center gap-2"><ReceiptText className="w-4 h-4 text-blue-600" /> Invoices</h2>
-          {invoices.length === 0 ? <p className="text-sm text-slate-400">No invoices.</p> : (
-            <div className="space-y-2">
-              {invoices.map((inv) => (
-                <div key={inv.id} className="flex items-center justify-between gap-2 rounded-lg ring-1 ring-slate-200 px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-800 truncate">{getProject(inv.projectId)?.name ?? "Project"}</p>
-                    <MetaBadge meta={INVOICE_STATUS_META[inv.status]} />
-                  </div>
-                  <span className="text-sm font-semibold text-slate-900">{money(inv.subtotal)}</span>
-                </div>
               ))}
             </div>
           )}

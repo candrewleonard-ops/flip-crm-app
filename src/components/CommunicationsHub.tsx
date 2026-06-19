@@ -8,8 +8,6 @@ import {
   StickyNote,
   MessageSquare,
   Mail,
-  Play,
-  CalendarClock,
   CheckCircle2,
   CircleDot,
   Inbox,
@@ -86,13 +84,12 @@ export function CommunicationsHub({
   embedded?: boolean;
 }) {
   const store = useStore();
-  const { db, getContractor, getProject, addCommunication, setTaskStatus, markTaskThreadRead } = store;
+  const { db, getContractor, getProject, addCommunication, markTaskThreadRead } = store;
   const toast = useToast();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [contractorFilter, setContractorFilter] = useState("");
-  const [tradeFilter, setTradeFilter] = useState("");
+  const [projectFilter, setProjectFilter] = useState("");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
 
@@ -141,8 +138,7 @@ export function CommunicationsHub({
     return threads
       .filter((t) => {
         if (unreadOnly && t.unreadCount === 0) return false;
-        if (contractorFilter && !t.contractors.some((c) => c.id === contractorFilter)) return false;
-        if (tradeFilter && !t.contractors.some((c) => c.specialty.includes(tradeFilter))) return false;
+        if (projectFilter && t.project.id !== projectFilter) return false;
         if (q) {
           const hay = `${t.task.title} ${t.project.name} ${t.contractors.map((c) => c.name).join(" ")}`.toLowerCase();
           if (!hay.includes(q)) return false;
@@ -150,11 +146,11 @@ export function CommunicationsHub({
         return true;
       })
       .sort(compareThreads);
-  }, [threads, search, contractorFilter, tradeFilter, unreadOnly]);
+  }, [threads, search, projectFilter, unreadOnly]);
 
   const totalUnread = threads.reduce((s, t) => s + t.unreadCount, 0);
 
-  // Auto-select first thread when none chosen (non-embedded), and mark read on open.
+  // Mark a thread read when opened.
   const selected = filtered.find((t) => t.task.id === selectedId) ?? null;
   useEffect(() => {
     if (selected && selected.unreadCount > 0) {
@@ -162,12 +158,13 @@ export function CommunicationsHub({
     }
   }, [selected, markTaskThreadRead]);
 
-  // Trades present in scope (for the filter)
-  const trades = useMemo(() => {
-    const set = new Set<string>();
-    threads.forEach((t) => t.contractors.forEach((c) => c.specialty.forEach((s) => set.add(s))));
-    return Array.from(set).sort();
+  // Projects present in scope (for the "All projects" filter)
+  const projectsInScope = useMemo(() => {
+    const map = new Map<string, Project>();
+    threads.forEach((t) => map.set(t.project.id, t.project));
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [threads]);
+
   const contractorsInScope = useMemo(() => {
     const map = new Map<string, Contractor>();
     threads.forEach((t) => t.contractors.forEach((c) => map.set(c.id, c)));
@@ -213,24 +210,17 @@ export function CommunicationsHub({
             className="input pl-8 py-1.5 text-sm"
           />
         </div>
-        <select className="input py-1.5 text-sm w-auto" value={contractorFilter} onChange={(e) => setContractorFilter(e.target.value)}>
-          <option value="">All contractors</option>
-          {contractorsInScope.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        <select className="input py-1.5 text-sm w-auto" value={tradeFilter} onChange={(e) => setTradeFilter(e.target.value)}>
-          <option value="">All trades</option>
-          {trades.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
+        {scope === "all" && (
+          <select className="input py-1.5 text-sm w-auto" value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)}>
+            <option value="">All projects</option>
+            {projectsInScope.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        )}
         <button
           onClick={() => setUnreadOnly((u) => !u)}
-          className={cn(
-            "btn text-xs py-1.5",
-            unreadOnly ? "btn-primary" : "btn-outline"
-          )}
+          className={cn("btn text-xs py-1.5", unreadOnly ? "btn-primary" : "btn-outline")}
         >
           <Inbox className="w-4 h-4" /> Unread only
         </button>
@@ -265,31 +255,18 @@ export function CommunicationsHub({
             <Conversation
               key={selected.task.id}
               thread={selected}
-              onSend={(content, type, contractorIds, scheduledFor) => {
-                contractorIds.forEach((cid) =>
-                  addCommunication({
-                    contractorId: cid,
-                    projectId: selected.project.id,
-                    taskId: selected.task.id,
-                    type,
-                    direction: "outbound",
-                    content,
-                    read: true,
-                    scheduledFor,
-                    callStatus: type === "call" ? "completed" : undefined,
-                  })
-                );
-                toast.success(
-                  scheduledFor
-                    ? "Message scheduled"
-                    : contractorIds.length > 1
-                      ? `Sent to ${contractorIds.length} contractors`
-                      : "Message sent"
-                );
-              }}
-              onStatus={(s) => {
-                setTaskStatus(selected.task.id, s);
-                toast.success(`Marked ${TASK_STATUS_META[s].label.toLowerCase()}`);
+              onSend={(content, type, contractorId) => {
+                addCommunication({
+                  contractorId,
+                  projectId: selected.project.id,
+                  taskId: selected.task.id,
+                  type,
+                  direction: "outbound",
+                  content,
+                  read: true,
+                  callStatus: type === "call" ? "completed" : undefined,
+                });
+                toast.success("Message sent");
               }}
             />
           ) : (
@@ -394,26 +371,19 @@ function ThreadRow({
 function Conversation({
   thread,
   onSend,
-  onStatus,
 }: {
   thread: Thread;
-  onSend: (content: string, type: CommType, contractorIds: string[], scheduledFor?: string) => void;
-  onStatus: (s: TaskItem["status"]) => void;
+  onSend: (content: string, type: CommType, contractorId: string) => void;
 }) {
   const [text, setText] = useState("");
   const [type, setType] = useState<CommType>("sms");
-  const [broadcast, setBroadcast] = useState(true);
   const [single, setSingle] = useState<string>(thread.contractors[0]?.id ?? "");
-  const [schedule, setSchedule] = useState("");
 
   const send = () => {
     const content = text.trim();
-    if (!content) return;
-    const ids = broadcast ? thread.contractors.map((c) => c.id) : single ? [single] : [];
-    if (ids.length === 0) return;
-    onSend(content, type, ids, schedule || undefined);
+    if (!content || !single) return;
+    onSend(content, type, single);
     setText("");
-    setSchedule("");
   };
 
   return (
@@ -435,18 +405,6 @@ function Conversation({
               <Avatar key={c.id} name={c.name} size={28} title={`${c.name} · ${c.company}`} />
             ))}
           </div>
-        </div>
-        {/* Quick actions */}
-        <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
-          <button className="btn btn-outline text-xs py-1" onClick={() => onStatus("in_progress")}>
-            <Play className="w-3.5 h-3.5 text-sky-600" /> In progress
-          </button>
-          <button className="btn btn-outline text-xs py-1" onClick={() => onStatus("scheduled")}>
-            <CalendarClock className="w-3.5 h-3.5 text-amber-600" /> Scheduled
-          </button>
-          <button className="btn btn-outline text-xs py-1" onClick={() => onStatus("completed")}>
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Complete
-          </button>
         </div>
       </div>
 
@@ -482,7 +440,7 @@ function Conversation({
               <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1 px-1">
                 <Icon className="w-3 h-3" />
                 {!outbound && contractor ? `${contractor.name.split(" ")[0]} · ` : ""}
-                {m.scheduledFor ? `scheduled ${m.scheduledFor}` : timeAgo(m.timestamp) || formatTime(m.timestamp)}
+                {timeAgo(m.timestamp) || formatTime(m.timestamp)}
               </span>
             </div>
           );
@@ -506,21 +464,13 @@ function Conversation({
               );
             })}
           </div>
-          <label className="flex items-center gap-1.5 text-slate-600">
-            <input type="checkbox" checked={broadcast} onChange={(e) => setBroadcast(e.target.checked)} />
-            Broadcast to all ({thread.contractors.length})
-          </label>
-          {!broadcast && (
-            <select className="input py-1 text-xs w-auto" value={single} onChange={(e) => setSingle(e.target.value)}>
-              {thread.contractors.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          )}
-          <div className="flex items-center gap-1 text-slate-500">
-            <CalendarClock className="w-3.5 h-3.5" />
-            <input type="date" className="input py-1 text-xs w-auto" value={schedule} onChange={(e) => setSchedule(e.target.value)} title="Schedule for later (optional)" />
-          </div>
+          <span className="text-slate-500">To:</span>
+          <select className="input py-1 text-xs w-auto" value={single} onChange={(e) => setSingle(e.target.value)}>
+            {thread.contractors.length === 0 && <option value="">No contractors assigned</option>}
+            {thread.contractors.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
         <div className="flex items-end gap-2">
           <textarea
@@ -530,11 +480,11 @@ function Conversation({
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send();
             }}
             rows={2}
-            placeholder={broadcast ? "Message all assigned contractors…" : "Message contractor…"}
+            placeholder="Message contractor…"
             className="input resize-none flex-1 text-sm"
           />
-          <button className="btn btn-primary" onClick={send} disabled={!text.trim() || thread.contractors.length === 0}>
-            <Send className="w-4 h-4" /> {schedule ? "Schedule" : "Send"}
+          <button className="btn btn-primary" onClick={send} disabled={!text.trim() || !single}>
+            <Send className="w-4 h-4" /> Send
           </button>
         </div>
       </div>
@@ -543,7 +493,7 @@ function Conversation({
 }
 
 // ------------------------------------------------------------
-// Broadcast modal
+// Broadcast modal ("Message all contractors")
 // ------------------------------------------------------------
 function BroadcastModal({
   open,

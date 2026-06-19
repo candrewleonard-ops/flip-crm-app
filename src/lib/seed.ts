@@ -22,7 +22,7 @@ import type {
   WeeklyTodo,
   AppSettings,
 } from "./types";
-import { getMicrotasksFor, milestoneSplit } from "./catalogs";
+import { getMicrotasksFor } from "./catalogs";
 
 // ---- date helpers anchored to a fixed "now" for stable demo data ----
 const NOW = new Date("2026-06-17T15:00:00Z");
@@ -290,104 +290,16 @@ function seedCommunications(): Communication[] {
 }
 
 // ------------------------------------------------------------
-// Invoices
-// ------------------------------------------------------------
-function seedInvoices(): Invoice[] {
-  const inv1Subtotal = 5500 + 2800;
-  const inv2Subtotal = 3500 + 800;
-  const s1 = milestoneSplit(inv1Subtotal);
-  const s2 = milestoneSplit(inv2Subtotal);
-  return [
-    {
-      id: "inv1", projectId: "p1", contractorId: "c2", status: "sent",
-      lineItems: [
-        { id: "li1", description: "Full Re-Pipe (PEX)", category: "Plumbing", subcategory: "plumb-2", unitPrice: 5500, quantity: 1, total: 5500 },
-        { id: "li2", description: "Panel Upgrade (200 AMP)", category: "Electrical", subcategory: "elec-2", unitPrice: 2800, quantity: 1, total: 2800 },
-      ],
-      subtotal: inv1Subtotal, ...s1,
-      depositPaid: true, midpointPaid: false, completionPaid: false,
-      terms: "Standard fix-&-flip agreement. 25% deposit / 25% midpoint / 50% completion.",
-      createdAt: tsAgo(72), sentAt: tsAgo(70),
-    },
-    {
-      id: "inv2", projectId: "p2", contractorId: "c5", status: "approved",
-      lineItems: [
-        { id: "li3", description: "Shower Tile Install", category: "Bathroom", subcategory: "bath-2", unitPrice: 3500, quantity: 1, total: 3500 },
-        { id: "li4", description: "Vanity Installation", category: "Bathroom", subcategory: "bath-3", unitPrice: 800, quantity: 1, total: 800 },
-      ],
-      subtotal: inv2Subtotal, ...s2,
-      depositPaid: true, midpointPaid: false, completionPaid: false,
-      terms: "Standard fix-&-flip agreement. 25% deposit / 25% midpoint / 50% completion.",
-      createdAt: tsAgo(120), sentAt: tsAgo(118),
-    },
-  ];
-}
-
-// ------------------------------------------------------------
 // Expenses
 // ------------------------------------------------------------
 function seedExpenses(): ExpenseItem[] {
   return [
-    { id: "e1", projectId: "p1", description: "Kitchen cabinets (shaker white)", category: "Kitchen", unitPrice: 6200, quantity: 1, total: 6200, vendor: "ProSource", purchasedDate: dayOffset(-6) },
-    { id: "e2", projectId: "p1", description: "PEX tubing & fittings", category: "Plumbing", unitPrice: 1450, quantity: 1, total: 1450, vendor: "Ferguson", purchasedDate: dayOffset(-10) },
+    { id: "e1", projectId: "p1", description: "Kitchen cabinets (shaker white)", category: "Kitchen", unitPrice: 6200, quantity: 1, total: 6200, vendor: "ProSource", purchasedDate: dayOffset(-6), notes: "6-week lead — ordered early to keep the schedule." },
+    { id: "e2", projectId: "p1", description: "PEX tubing & fittings", category: "Plumbing", unitPrice: 1450, quantity: 1, total: 1450, vendor: "Ferguson", purchasedDate: dayOffset(-10), payeeContractorId: "c2" },
     { id: "e3", projectId: "p1", description: "Architectural shingles", category: "Roofing", unitPrice: 3850, quantity: 1, total: 3850, vendor: "ABC Supply", purchasedDate: dayOffset(-4) },
-    { id: "e4", projectId: "p2", description: "LVP flooring — Smoked Oak", category: "Flooring", unitPrice: 2.39, quantity: 1100, total: 2629, vendor: "Floor & Decor", purchasedDate: dayOffset(-14) },
+    { id: "e4", projectId: "p2", description: "LVP flooring — Smoked Oak", category: "Flooring", unitPrice: 2.39, quantity: 1100, total: 2629, vendor: "Floor & Decor", purchasedDate: dayOffset(-14), notes: "Ordered 10% extra for waste — came in slightly over estimate." },
     { id: "e5", projectId: "p2", description: "Bathroom tile & setting materials", category: "Bathroom", unitPrice: 1850, quantity: 1, total: 1850, vendor: "The Tile Shop", purchasedDate: dayOffset(-9) },
-    { id: "e6", projectId: "p3", description: "Framing lumber package", category: "Framing", unitPrice: 7800, quantity: 1, total: 7800, vendor: "84 Lumber", purchasedDate: dayOffset(-12) },
-  ];
-}
-
-// ------------------------------------------------------------
-// Investments (1 rental + 1 note)
-// ------------------------------------------------------------
-function seedInvestments(): Investment[] {
-  const noUtil = { tenantPays: true, monthlyCost: 0 };
-  return [
-    {
-      id: "r1", type: "rental", name: "Maple St Duplex", collectingIncome: true,
-      address: { street: "412 Maple St", city: "Lima", state: "OH", zip: "45804", lat: 40.742, lng: -84.105 },
-      photos: [],
-      principal: 720, interest: 305, taxes: 185, insurance: 95,
-      monthlyRent: 1750,
-      gas: noUtil, electric: noUtil, sewer: { tenantPays: false, monthlyCost: 65 }, water: { tenantPays: false, monthlyCost: 80 }, trash: { tenantPays: false, monthlyCost: 30 },
-      depositAmount: 1750, leaseStartDate: dayOffset(-200), leaseEndDate: dayOffset(165),
-      tenantNames: "Marcus & Tina Reed", numberOfOccupants: 3,
-      tenantContactInfo: "(555) 884-2210 · reed.family@email.com",
-      propertyManagerContact: "Self-managed", propertyManagerFee: 0,
-      electricProvider: "AEP Ohio", electricAccount: "AEP-44821",
-      waterProvider: "City of Lima", waterAccount: "LW-90233",
-      gasProvider: "Columbia Gas", gasAccount: "CG-71140",
-      sewerProvider: "City of Lima", sewerAccount: "LS-90233",
-      trashProvider: "Republic Services", trashAccount: "RS-55012",
-      workOrders: [
-        { id: "wo1", description: "Replace garbage disposal — unit B", cost: 220, date: dayOffset(-15), status: "completed" },
-        { id: "wo2", description: "Furnace annual service", cost: 145, date: dayOffset(5), status: "open" },
-      ],
-      yearBuilt: "1968", squareFootage: "2,240", bedrooms: "4", bathrooms: "2", lotSize: "0.18 ac",
-      propertyType: "Duplex", acInstalled: "2021", roofInstalled: "2019", guttersInstalled: "2019",
-      floorsInstalled: "2020", kitchenRemodeled: "2020", bathroomRemodeled: "2020",
-      waterHeaterInstalled: "2022", furnaceInstalled: "2018", electricalUpdated: "2020",
-      plumbingUpdated: "2020", foundationType: "Poured concrete", garageType: "Detached 1-car",
-      propertyNotes: "Solid cash-flowing duplex. Both units occupied, leases stagger by 6 months.",
-      createdAt: dayOffset(-210),
-    },
-    {
-      id: "n1", type: "note", name: "Henderson Bridge Loan", collectingIncome: true,
-      borrowerName: "J. Henderson Holdings LLC", loanAmount: 45000,
-      dateLent: dayOffset(-90), dateDue: dayOffset(275),
-      monthlyPaymentDate: "1st of month", monthlyPaymentAmount: 600,
-      annualInterestRate: 12, collateral: "2nd lien on 88 Oak St, Lima OH (ARV $140k)",
-      createdAt: dayOffset(-90),
-    },
-  ];
-}
-
-function seedWeeklyTodos(): WeeklyTodo[] {
-  return [
-    { id: "wt1", projectId: "p1", text: "Order kitchen cabinets (6-week lead time)", hiddenFromDashboard: false, createdAt: dayOffset(-2) },
-    { id: "wt2", projectId: "p1", text: "Confirm dumpster pickup Friday", hiddenFromDashboard: false, createdAt: dayOffset(-1) },
-    { id: "wt3", projectId: "p2", text: "Schedule final plumbing inspection", hiddenFromDashboard: false, createdAt: dayOffset(-1) },
-    { id: "wt4", projectId: "p3", text: "Get HOA color approval for rear addition", hiddenFromDashboard: false, createdAt: dayOffset(-3) },
+    { id: "e6", projectId: "p3", description: "Framing lumber package", category: "Framing", unitPrice: 7800, quantity: 1, total: 7800, vendor: "84 Lumber", purchasedDate: dayOffset(-12), payeeContractorId: "c1", notes: "Lumber prices spiked vs original plan — watch framing budget." },
   ];
 }
 
@@ -403,11 +315,11 @@ export function createSeedDb(): DB {
     contractors: seedContractors(),
     tasks: seedTasks(),
     expenses: seedExpenses(),
-    invoices: seedInvoices(),
+    invoices: [],
     communications: seedCommunications(),
     folders: seedFolders(),
-    investments: seedInvestments(),
-    weeklyTodos: seedWeeklyTodos(),
+    investments: [],
+    weeklyTodos: [],
     settings: { ...DEFAULT_SETTINGS },
   };
 }
