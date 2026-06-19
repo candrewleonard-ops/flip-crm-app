@@ -11,6 +11,7 @@ interface Draft {
   status: ProjectStatus;
   folderId: string;
   purchasePrice: number; estimatedARV: number; totalBudget: number; totalSpent: number;
+  squareFootage: number;
   startDate: string; estimatedEndDate: string;
   scopeOfWork: string;
 }
@@ -23,6 +24,7 @@ function draftFrom(p?: Project, defaultFolder?: string): Draft {
     folderId: p?.folderId ?? defaultFolder ?? "",
     purchasePrice: p?.purchasePrice ?? 0, estimatedARV: p?.estimatedARV ?? 0,
     totalBudget: p?.totalBudget ?? 0, totalSpent: p?.totalSpent ?? 0,
+    squareFootage: p?.squareFootage ?? 0,
     startDate: p?.startDate ?? "", estimatedEndDate: p?.estimatedEndDate ?? "",
     scopeOfWork: p?.scopeOfWork ?? "",
   };
@@ -52,7 +54,7 @@ export function ProjectModal({
   defaultFolder?: string;
   onSaved?: (id: string) => void;
 }) {
-  const { db, addProject, updateProject, moveProjectToFolder } = useStore();
+  const { db, addProject, updateProject, moveProjectToFolder, setSquareFootage } = useStore();
   const toast = useToast();
   const [d, setD] = useState<Draft>(draftFrom(project, defaultFolder));
 
@@ -74,6 +76,7 @@ export function ProjectModal({
       estimatedARV: Number(d.estimatedARV) || 0,
       totalBudget: Number(d.totalBudget) || 0,
       totalSpent: Number(d.totalSpent) || 0,
+      squareFootage: Number(d.squareFootage) || 0,
       startDate: d.startDate,
       estimatedEndDate: d.estimatedEndDate,
       scopeOfWork: d.scopeOfWork,
@@ -81,6 +84,8 @@ export function ProjectModal({
     if (project) {
       updateProject(project.id, payload);
       if (project.folderId !== d.folderId) moveProjectToFolder(project.id, d.folderId);
+      // Route sqft through setSquareFootage so flooring task budgets recompute.
+      if (project.squareFootage !== payload.squareFootage) setSquareFootage(project.id, payload.squareFootage);
       toast.success("Project updated");
       onSaved?.(project.id);
     } else {
@@ -156,6 +161,11 @@ export function ProjectModal({
         <label className="block">
           <span className="text-xs font-medium text-slate-600">Total spent</span>
           <input type="number" className="input mt-1" value={d.totalSpent} onChange={(e) => set("totalSpent", Number(e.target.value))} />
+        </label>
+        <label className="block">
+          <span className="text-xs font-medium text-slate-600">Square footage</span>
+          <input type="number" className="input mt-1" value={d.squareFootage} onChange={(e) => set("squareFootage", Number(e.target.value))} placeholder="e.g. 1500" />
+          <span className="text-[11px] text-slate-400">Drives flooring budgets ($4.50/sq ft)</span>
         </label>
         <label className="block">
           <span className="text-xs font-medium text-slate-600">Start date</span>

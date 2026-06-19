@@ -14,15 +14,25 @@ const UTILS: { key: keyof ProjectVital; acct: keyof ProjectVital; label: string 
 ];
 
 export function VitalInfoTab({ project }: { project: Project }) {
-  const { updateProject } = useStore();
+  const { updateProject, setSquareFootage } = useStore();
   const toast = useToast();
   const [scope, setScope] = useState(project.scopeOfWork);
   const [vital, setVital] = useState<ProjectVital>(project.vital ?? {});
+  const [sqft, setSqft] = useState(String(project.squareFootage));
 
   useEffect(() => {
     setScope(project.scopeOfWork);
     setVital(project.vital ?? {});
+    setSqft(String(project.squareFootage));
   }, [project.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const commitSqft = () => {
+    const n = Number(sqft) || 0;
+    if (n !== project.squareFootage) {
+      setSquareFootage(project.id, n);
+      toast.success("Square footage updated · flooring budgets recalculated");
+    }
+  };
 
   const setV = (k: keyof ProjectVital, v: string) => setVital((prev) => ({ ...prev, [k]: v }));
 
@@ -35,6 +45,7 @@ export function VitalInfoTab({ project }: { project: Project }) {
     ["Address", fullAddress(project.address)],
     ["Purchase Price", money(project.purchasePrice)],
     ["Estimated ARV", money(project.estimatedARV)],
+    ["Square Footage", project.squareFootage ? `${project.squareFootage.toLocaleString()} sq ft` : "—"],
     ["Total Budget", money(project.totalBudget)],
     ["Total Spent", money(project.totalSpent)],
     ["Start Date", formatDate(project.startDate)],
@@ -61,6 +72,19 @@ export function VitalInfoTab({ project }: { project: Project }) {
             <label className="block sm:col-span-1">
               <span className="text-xs font-medium text-slate-600">Notes</span>
               <input className="input mt-1" value={vital.notes ?? ""} onChange={(e) => setV("notes", e.target.value)} placeholder="Anything important on site" />
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium text-slate-600">Square Footage</span>
+              <input
+                type="number"
+                className="input mt-1"
+                value={sqft}
+                onChange={(e) => setSqft(e.target.value)}
+                onBlur={commitSqft}
+                onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                placeholder="e.g. 1500"
+              />
+              <span className="text-[11px] text-slate-400">Drives flooring budgets at $4.50/sq ft</span>
             </label>
           </div>
         </div>

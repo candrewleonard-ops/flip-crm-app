@@ -1,17 +1,21 @@
 import React, { useMemo, useState } from "react";
-import { Plus, LayoutList, Columns3, FolderPlus, Trash2 } from "lucide-react";
+import { Plus, LayoutList, Columns3, FolderPlus, Trash2, Wand2 } from "lucide-react";
 import type { Project, TaskItem, TaskStatus } from "../../lib/types";
 import { useStore } from "../../lib/store";
+import { DEFAULT_TASKS } from "../../lib/catalogs";
 import { TASK_STATUS_META, TASK_STATUS_ORDER, PRIORITY_RANK } from "../../lib/labels";
 import { TaskCard } from "./TaskCard";
 import { TaskEditorModal } from "./TaskEditorModal";
 import { useToast } from "../ui/Toast";
 import { useConfirm, ConfirmDialog } from "../ui/ConfirmDialog";
 import { EmptyState } from "../ui/EmptyState";
-import { cn } from "../../lib/utils";
+import { cn, money } from "../../lib/utils";
 
 export function TasksTab({ project }: { project: Project }) {
-  const { getProjectTasks, deleteTask, setTaskStatus, addProjectSubfolder, deleteProjectSubfolder } = useStore();
+  const {
+    getProjectTasks, deleteTask, setTaskStatus, addProjectSubfolder, deleteProjectSubfolder,
+    addTask, generateStandardWorkOrders, previewStandardWorkOrders,
+  } = useStore();
   const toast = useToast();
   const { state, confirm, close } = useConfirm();
   const tasks = getProjectTasks(project.id);
@@ -20,6 +24,34 @@ export function TasksTab({ project }: { project: Project }) {
   const [editing, setEditing] = useState<TaskItem | null>(null);
   const [creating, setCreating] = useState(false);
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
+  const [quick, setQuick] = useState("");
+
+  const quickAdd = () => {
+    const title = quick.trim();
+    if (!title) return;
+    const tmpl = DEFAULT_TASKS.find((t) => t.title.toLowerCase() === title.toLowerCase());
+    addTask({ projectId: project.id, title, category: tmpl?.category ?? "General" });
+    setQuick("");
+    toast.success("Task added");
+  };
+
+  const generate = () => {
+    const { missing, projectedBudget } = previewStandardWorkOrders(project.id);
+    if (missing === 0) {
+      toast.info("All standard work orders already exist");
+      return;
+    }
+    confirm({
+      title: "Generate standard work orders?",
+      message: `This adds ${missing} standard rehab task${missing === 1 ? "" : "s"} — each with its microtask checklist, a sequential schedule, and an auto-budget (flooring is priced from square footage). Projected total budget: ${money(projectedBudget)}. Existing tasks are left untouched.`,
+      confirmLabel: `Generate ${missing}`,
+      onConfirm: () => {
+        const res = generateStandardWorkOrders(project.id);
+        toast.success(`Added ${res.added} standard work orders`);
+        toast.info(`Project budget set to ${money(res.budget)}`);
+      },
+    });
+  };
 
   const subfolders = (project.subfolders ?? []).filter((s) => s.parent === "renovation");
 
@@ -77,8 +109,24 @@ export function TasksTab({ project }: { project: Project }) {
           <FolderPlus className="w-4 h-4" /> Subfolder
         </button>
         <div className="flex-1" />
+        <button className="btn btn-outline text-sm" onClick={generate}>
+          <Wand2 className="w-4 h-4 text-blue-600" /> Generate standard work orders
+        </button>
         <button className="btn btn-primary text-sm" onClick={() => setCreating(true)}>
           <Plus className="w-4 h-4" /> New Task
+        </button>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <input
+          className="input"
+          placeholder="Quick add a task by title (e.g. Drywall Work)… auto-loads its checklist"
+          value={quick}
+          onChange={(e) => setQuick(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && quickAdd()}
+        />
+        <button className="btn btn-outline" onClick={quickAdd} disabled={!quick.trim()}>
+          <Plus className="w-4 h-4" /> Add
         </button>
       </div>
 

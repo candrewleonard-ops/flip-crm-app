@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Plus, X, CheckCircle2, Circle, Sparkles } from "lucide-react";
-import type { TaskItem, TaskStatus, TaskPriority, QualityCheck, Microtask, ProjectSubfolder } from "../../lib/types";
+import type { TaskItem, TaskStatus, TaskPriority, QualityCheck, Microtask, ProjectSubfolder, TaskPricing } from "../../lib/types";
 import { useStore } from "../../lib/store";
 import { DEFAULT_TASKS, getMicrotasksFor } from "../../lib/catalogs";
+import { pricingForCategory, computeEstimatedCost } from "../../lib/task-pricing";
 import { TASK_STATUS_META, PRIORITY_META, QUALITY_META, TASK_STATUS_ORDER, TASK_CATEGORIES } from "../../lib/labels";
 import { Modal } from "../ui/Modal";
 import { ContractorMultiSelect } from "./ContractorMultiSelect";
-import { cn } from "../../lib/utils";
+import { cn, money } from "../../lib/utils";
 
 interface Draft {
   title: string;
@@ -24,6 +25,8 @@ interface Draft {
   notes: string;
   microtasks: Microtask[];
   assignedContractorIds: string[];
+  costManuallyEdited: boolean;
+  pricingOverride?: TaskPricing;
 }
 
 function emptyDraft(): Draft {
@@ -43,6 +46,7 @@ function emptyDraft(): Draft {
     notes: "",
     microtasks: [],
     assignedContractorIds: [],
+    costManuallyEdited: false,
   };
 }
 
@@ -83,6 +87,8 @@ export function TaskEditorModal({
         notes: task.notes ?? "",
         microtasks: task.microtasks ?? [],
         assignedContractorIds: task.assignedContractorIds,
+        costManuallyEdited: task.costManuallyEdited ?? false,
+        pricingOverride: task.pricingOverride,
       });
     } else {
       setD(emptyDraft());
@@ -90,6 +96,14 @@ export function TaskEditorModal({
   }, [open, task]);
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((prev) => ({ ...prev, [k]: v }));
+
+  // Square-foot pricing (flooring only) — single source of truth in task-pricing.ts.
+  const project = db.projects.find((p) => p.id === projectId);
+  const sqft = project?.squareFootage ?? 0;
+  const pricing = d.pricingOverride ?? pricingForCategory(d.category);
+  const perSqft = pricing.mode === "per_sqft";
+  const autoCost = computeEstimatedCost(d.category, sqft, d.pricingOverride);
+  const effectiveCost = perSqft && !d.costManuallyEdited ? autoCost : Number(d.estimatedCost) || 0;
 
   const renoSubfolders = useMemo(() => subfolders.filter((s) => s.parent === "renovation"), [subfolders]);
 
@@ -119,7 +133,7 @@ export function TaskEditorModal({
       status: d.status,
       priority: d.priority,
       qualityCheck: d.qualityCheck,
-      estimatedCost: Number(d.estimatedCost) || 0,
+      estimatedCost: effectiveCost,
       actualCost: Number(d.actualCost) || 0,
       dueDate: d.dueDate || undefined,
       scheduledDate: d.scheduledDate || undefined,
@@ -128,6 +142,8 @@ export function TaskEditorModal({
       notes: d.notes || undefined,
       microtasks: micro,
       assignedContractorIds: d.assignedContractorIds,
+      costManuallyEdited: d.costManuallyEdited,
+      pricingOverride: d.pricingOverride,
     };
     if (task) {
       updateTask(task.id, payload);
@@ -219,10 +235,42 @@ export function TaskEditorModal({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <label className="block">
+            <div className="block">
               <span className="text-xs font-medium text-slate-600">Estimated cost</span>
-              <input type="number" className="input mt-1" value={d.estimatedCost} onChange={(e) => set("estimatedCost", Number(e.target.value))} />
-            </label>
+              {perSqft && !d.costManuallyEdited ? (
+                <>
+                  <input readOnly className="input mt-1 bg-slate-50 text-slate-700" value={money(autoCost)} />
+                  <p className="text-[11px] text-emerald-700 mt-1">
+                    Auto: {sqft.toLocaleString()} sq ft × ${pricing.rate.toFixed(2)} = {money(autoCost)}
+                  </p>
+                  <button
+                    type="button"
+                    className="text-[11px] text-blue-600 hover:underline mt-0.5"
+                    onClick={() => setD((p) => ({ ...p, costManuallyEdited: true, estimatedCost: autoCost }))}
+                  >
+                    Use manual amount
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="number"
+                    className="input mt-1"
+                    value={d.estimatedCost}
+                    onChange={(e) => setD((p) => ({ ...p, estimatedCost: Number(e.target.value), costManuallyEdited: true }))}
+                  />
+                  {perSqft && (
+                    <button
+                      type="button"
+                      className="text-[11px] text-blue-600 hover:underline mt-0.5"
+                      onClick={() => set("costManuallyEdited", false)}
+                    >
+                      Back to auto ({money(autoCost)})
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
             <label className="block">
               <span className="text-xs font-medium text-slate-600">Actual cost</span>
               <input type="number" className="input mt-1" value={d.actualCost} onChange={(e) => set("actualCost", Number(e.target.value))} />

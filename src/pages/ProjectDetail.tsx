@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Pencil, Trash2, Hammer, Wrench, FolderKanban,
@@ -146,6 +146,8 @@ export function ProjectDetail() {
           <ProgressBar value={pct(project.totalSpent, project.totalBudget)} over={over} height="h-2.5" />
         </div>
 
+        <SquareFootageField projectId={project.id} value={project.squareFootage} />
+
         {project.scopeOfWork && <p className="text-sm text-slate-600 mt-4 leading-relaxed">{project.scopeOfWork}</p>}
 
         {/* Status strip */}
@@ -199,6 +201,30 @@ export function ProjectDetail() {
 
       <ProjectModal open={editing} onClose={() => setEditing(false)} project={project} />
       <ConfirmDialog state={state} onClose={close} />
+    </div>
+  );
+}
+
+function SquareFootageField({ projectId, value }: { projectId: string; value: number }) {
+  const { setSquareFootage } = useStore();
+  const [v, setV] = useState(String(value));
+  useEffect(() => setV(String(value)), [value]);
+  const commit = () => {
+    const n = Number(v) || 0;
+    if (n !== value) setSquareFootage(projectId, n);
+  };
+  return (
+    <div className="flex items-center gap-2 mt-3">
+      <span className="text-xs font-medium text-slate-500">Square Footage</span>
+      <input
+        type="number"
+        className="input py-1 w-28 text-sm"
+        value={v}
+        onChange={(e) => setV(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+      />
+      <span className="text-xs text-slate-400">sq ft · flooring auto-budgeted at $4.50/sq ft</span>
     </div>
   );
 }

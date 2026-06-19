@@ -27,7 +27,56 @@ import type {
   ExportInvoicePdfArgs,
 } from "./types";
 import { createSeedDb, normalizeDb } from "./seed";
-import { getMicrotasksFor } from "./catalogs";
+import { getMicrotasksFor, DEFAULT_TASKS } from "./catalogs";
+import { computeEstimatedCost, pricingForCategory } from "./task-pricing";
+
+// Categories that get a "high" default priority when bulk-generating work orders.
+const HIGH_PRIORITY_CATEGORIES = new Set(["Demolition", "Foundation", "Roofing", "Electrical", "Plumbing"]);
+
+function addDaysIso(iso: string, days: number): string {
+  const base = iso ? new Date(iso.includes("T") ? iso : `${iso}T00:00:00`) : new Date();
+  if (isNaN(base.getTime())) base.setTime(Date.now());
+  base.setDate(base.getDate() + days);
+  return base.toISOString().slice(0, 10);
+}
+
+/**
+ * Plan the standard work-order set for a project from DEFAULT_TASKS:
+ * one task per template (skipping titles that already exist), each with its
+ * microtask checklist, default priority, sqft-aware estimated cost, and a
+ * sequential due date staggered from the project start. Pure/idempotent.
+ */
+function planStandardWorkOrders(project: Project, existing: TaskItem[]): { newTasks: TaskItem[]; budget: number } {
+  const existingTitles = new Set(existing.map((t) => t.title.toLowerCase()));
+  let cursor = project.startDate || new Date().toISOString().slice(0, 10);
+  const newTasks: TaskItem[] = [];
+  for (const tmpl of DEFAULT_TASKS) {
+    const due = addDaysIso(cursor, tmpl.days);
+    cursor = due; // advance the schedule even for templates already present
+    if (existingTitles.has(tmpl.title.toLowerCase())) continue;
+    newTasks.push({
+      id: uuid(),
+      projectId: project.id,
+      title: tmpl.title,
+      description: "",
+      status: "not_started",
+      priority: HIGH_PRIORITY_CATEGORIES.has(tmpl.category) ? "high" : "medium",
+      qualityCheck: "pending",
+      assignedContractorIds: [],
+      dueDate: due,
+      orderConfirmed: false,
+      estimatedCost: computeEstimatedCost(tmpl.category, project.squareFootage),
+      actualCost: 0,
+      category: tmpl.category,
+      photos: [],
+      microtasks: getMicrotasksFor(tmpl.title, tmpl.category),
+      subfolderId: null,
+      costManuallyEdited: false,
+    });
+  }
+  const budget = [...existing, ...newTasks].reduce((s, t) => s + t.estimatedCost, 0);
+  return { newTasks, budget };
+}
 
 // ------------------------------------------------------------
 // Platform adapter — desktop (window.api) or localStorage fallback.
@@ -124,6 +173,14 @@ export interface StoreValue {
   assignContractorToTask(taskId: string, contractorId: string): void;
   unassignContractorFromTask(taskId: string, contractorId: string): void;
   setTaskStatus(taskId: string, status: TaskItem["status"]): void;
+  /** Create one task per DEFAULT_TASKS template (skipping ones that already
+   *  exist), with microtasks, staggered schedule and pricing; updates budget. */
+  generateStandardWorkOrders(projectId: string): { added: number; budget: number };
+  /** How many standard templates aren't yet present (preview for confirm dialog). */
+  previewStandardWorkOrders(projectId: string): { missing: number; projectedBudget: number };
+  /** Set project square footage and recompute square-foot priced (flooring)
+   *  tasks that the user hasn't manually edited. */
+  setSquareFootage(projectId: string, sqft: number): void;
 
   // contractors
   addContractor(input: Partial<Contractor> & { name: string }): Contractor;
@@ -201,6 +258,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dirty = useRef(false);
+  // Always-fresh snapshot of the DB for callbacks that need to read current
+  // state synchronously (e.g. computing a task's cost from project sqft).
+  const dbRef = useRef(db);
+  dbRef.current = db;
 
   useEffect(() => {
     let mounted = true;
@@ -259,6 +320,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         estimatedARV: input.estimatedARV ?? 0,
         totalBudget: input.totalBudget ?? 0,
         totalSpent: input.totalSpent ?? 0,
+        squareFootage: input.squareFootage ?? 0,
         startDate: input.startDate ?? "",
         estimatedEndDate: input.estimatedEndDate ?? "",
         completedDate: input.completedDate,
@@ -334,6 +396,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // ---------- tasks ----------
   const addTask = useCallback<StoreValue["addTask"]>(
     (input) => {
+      const category = input.category ?? "General";
+      const project = dbRef.current.projects.find((p) => p.id === input.projectId);
+      // Auto-budget from pricing rules when a cost isn't explicitly provided
+      // (flooring → sqft × $4.50; everything else → flat default).
+      const estimatedCost =
+        input.estimatedCost ?? computeEstimatedCost(category, project?.squareFootage ?? 0, input.pricingOverride);
       const task: TaskItem = {
         id: uuid(),
         projectId: input.projectId,
@@ -347,16 +415,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         completedDate: input.completedDate,
         dueDate: input.dueDate,
         orderConfirmed: input.orderConfirmed ?? false,
-        estimatedCost: input.estimatedCost ?? 0,
+        estimatedCost,
         actualCost: input.actualCost ?? 0,
-        category: input.category ?? "General",
+        category,
         notes: input.notes,
         photos: input.photos ?? [],
         microtasks:
           input.microtasks && input.microtasks.length > 0
             ? input.microtasks
-            : getMicrotasksFor(input.title, input.category),
+            : getMicrotasksFor(input.title, category),
         subfolderId: input.subfolderId ?? null,
+        costManuallyEdited: input.costManuallyEdited,
+        pricingOverride: input.pricingOverride,
       };
       mutate((d) => {
         // ensure assigned contractors are on the project too
@@ -459,6 +529,49 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               }
             : t
         ),
+      })),
+    [mutate]
+  );
+
+  const generateStandardWorkOrders = useCallback<StoreValue["generateStandardWorkOrders"]>(
+    (projectId) => {
+      const project = dbRef.current.projects.find((p) => p.id === projectId);
+      if (!project) return { added: 0, budget: 0 };
+      const existing = dbRef.current.tasks.filter((t) => t.projectId === projectId);
+      const { newTasks, budget } = planStandardWorkOrders(project, existing);
+      if (newTasks.length > 0) {
+        mutate((d) => ({
+          ...d,
+          tasks: [...d.tasks, ...newTasks],
+          projects: d.projects.map((p) => (p.id === projectId ? { ...p, totalBudget: budget } : p)),
+        }));
+      }
+      return { added: newTasks.length, budget };
+    },
+    [mutate]
+  );
+
+  const previewStandardWorkOrders = useCallback<StoreValue["previewStandardWorkOrders"]>((projectId) => {
+    const project = dbRef.current.projects.find((p) => p.id === projectId);
+    if (!project) return { missing: 0, projectedBudget: 0 };
+    const existing = dbRef.current.tasks.filter((t) => t.projectId === projectId);
+    const { newTasks, budget } = planStandardWorkOrders(project, existing);
+    return { missing: newTasks.length, projectedBudget: budget };
+  }, []);
+
+  const setSquareFootage = useCallback<StoreValue["setSquareFootage"]>(
+    (projectId, sqft) =>
+      mutate((d) => ({
+        ...d,
+        projects: d.projects.map((p) => (p.id === projectId ? { ...p, squareFootage: sqft } : p)),
+        tasks: d.tasks.map((t) => {
+          if (t.projectId !== projectId) return t;
+          const pricing = t.pricingOverride ?? pricingForCategory(t.category);
+          if (pricing.mode === "per_sqft" && !t.costManuallyEdited) {
+            return { ...t, estimatedCost: computeEstimatedCost(t.category, sqft, t.pricingOverride) };
+          }
+          return t;
+        }),
       })),
     [mutate]
   );
@@ -855,6 +968,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     assignContractorToTask,
     unassignContractorFromTask,
     setTaskStatus,
+    generateStandardWorkOrders,
+    previewStandardWorkOrders,
+    setSquareFootage,
     addContractor,
     updateContractor,
     deleteContractor,

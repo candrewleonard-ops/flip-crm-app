@@ -59,8 +59,9 @@ db + media folder) and **Reset to sample data**.
 - **Projects** — nested folders (drag projects between them, recolor, rename),
   and a full project detail screen with two main folders:
   - *Renovation & Reconstruction*: Active Work Orders · Tasks (list + kanban,
-    microtask checklists, multi-contractor assignment via checkboxes) ·
-    Communications · Contractors · Photos & Videos · 3D Renders
+    microtask checklists, multi-contractor assignment, one-click **Generate
+    standard work orders** from templates) · Communications · Contractors ·
+    Photos & Videos · 3D Renders
   - *Project Information*: Vital Information · Expenses (+receipts) · Invoices ·
     Documents · Photos & Videos
 - **Communications Hub** — one place to message every contractor on active &
@@ -101,5 +102,9 @@ flipcrm-desktop/
   single `vite.config.ts`.
 - **Backups are folder-based** (a copy of `flipcrm-db.json` + `media/`) so there are
   no extra dependencies and the backup is easy to drop on a USB drive.
+- **Task pricing lives in one file** — `src/lib/task-pricing.ts`. Only flooring is
+  square-foot priced ($4.50/sq ft, driven by each project's square footage);
+  everything else is a flat/manual amount. Change the rate or add a square-foot
+  category there and nothing else needs editing.
 - If you ever open the renderer in a plain browser (e.g. `vite preview`), it falls
   back to `localStorage`; file features are desktop-only.

@@ -117,6 +117,7 @@ function seedProjects(): Project[] {
       id: "p1", name: "Northern Ave Flip", folderId: "f-priority", status: "active",
       address: { street: "620 W Northern Ave", city: "Lima", state: "OH", zip: "45801", lat: 40.758, lng: -84.1124 },
       purchasePrice: 62000, estimatedARV: 165000, totalBudget: 85000, totalSpent: 61250,
+      squareFootage: 1500,
       startDate: dayOffset(-34), estimatedEndDate: dayOffset(28),
       contractorIds: ["c1", "c2", "c3", "c4"],
       photos: [], documents: [], renders: [],
@@ -133,6 +134,7 @@ function seedProjects(): Project[] {
       id: "p2", name: "Wayside Dr Rehab", folderId: "f-active", status: "active",
       address: { street: "1216 Wayside Dr", city: "Lima", state: "OH", zip: "45805", lat: 40.729, lng: -84.1052 },
       purchasePrice: 51000, estimatedARV: 149000, totalBudget: 72000, totalSpent: 78500,
+      squareFootage: 1320,
       startDate: dayOffset(-52), estimatedEndDate: dayOffset(6),
       contractorIds: ["c1", "c4", "c5"],
       photos: [], documents: [], renders: [],
@@ -145,6 +147,7 @@ function seedProjects(): Project[] {
       id: "p3", name: "Highland Ct Flip", folderId: "f-active", status: "active",
       address: { street: "6314 E Highland Ct", city: "Columbus", state: "IN", zip: "47203", lat: 39.2014, lng: -85.9214 },
       purchasePrice: 95000, estimatedARV: 240000, totalBudget: 120000, totalSpent: 44000,
+      squareFootage: 2240,
       startDate: dayOffset(-18), estimatedEndDate: dayOffset(70),
       contractorIds: ["c1", "c2", "c4"],
       photos: [], documents: [], renders: [],
@@ -157,6 +160,7 @@ function seedProjects(): Project[] {
       id: "p4", name: "Monroe Ave Rehab", folderId: "f-priority", status: "active",
       address: { street: "217 N Monroe Ave", city: "Butler", state: "PA", zip: "16001", lat: 40.8612, lng: -79.8953 },
       purchasePrice: 38000, estimatedARV: 112000, totalBudget: 64000, totalSpent: 31000,
+      squareFootage: 1180,
       startDate: dayOffset(-9), estimatedEndDate: dayOffset(45),
       contractorIds: ["c3", "c4"],
       photos: [], documents: [], renders: [],
@@ -167,6 +171,7 @@ function seedProjects(): Project[] {
       id: "p5", name: "Trail Valley Flip", folderId: "f-hold", status: "on_hold",
       address: { street: "6202 Trail Valley Dr", city: "San Antonio", state: "TX", zip: "78249", lat: 29.553, lng: -98.6175 },
       purchasePrice: 70000, estimatedARV: 198000, totalBudget: 98000, totalSpent: 12000,
+      squareFootage: 1650,
       startDate: dayOffset(-70), estimatedEndDate: dayOffset(120),
       contractorIds: [],
       photos: [], documents: [], renders: [],
@@ -177,6 +182,7 @@ function seedProjects(): Project[] {
       id: "p6", name: "Dilworth Rd Flip", folderId: "f-completed", status: "completed",
       address: { street: "100 W Dilworth Rd", city: "Italy", state: "TX", zip: "76651", lat: 32.1835, lng: -96.8847 },
       purchasePrice: 44000, estimatedARV: 138000, totalBudget: 70000, totalSpent: 67400,
+      squareFootage: 1400,
       startDate: dayOffset(-220), estimatedEndDate: dayOffset(-30), completedDate: dayOffset(-28),
       contractorIds: ["c1"],
       photos: [], documents: [], renders: [],
@@ -211,7 +217,7 @@ function seedTasks(): TaskItem[] {
     // p2 — Wayside Dr
     { id: "t-p2-demo", p: "p2", title: "Demo", cat: "Demolition", status: "completed", pr: "high", qc: "passed", c: ["c4"], est: 2800, act: 2700, done: 6 },
     { id: "t-p2-bath", p: "p2", title: "Bathroom Remodel", cat: "Bathroom", status: "in_progress", pr: "high", qc: "pending", c: ["c5"], est: 8000, act: 4200, due: 1, done: 3, order: true },
-    { id: "t-p2-floor", p: "p2", title: "Flooring", cat: "Flooring", status: "in_progress", pr: "medium", qc: "pending", c: ["c1"], est: 6500, act: 2629, due: 4, done: 1, order: true },
+    { id: "t-p2-floor", p: "p2", title: "Flooring", cat: "Flooring", status: "in_progress", pr: "medium", qc: "pending", c: ["c1"], est: 5940, act: 2629, due: 4, done: 1, order: true },
     { id: "t-p2-paint", p: "p2", title: "Paint By Room", cat: "Painting", status: "scheduled", pr: "low", qc: "pending", c: ["c5"], est: 3200, act: 0, sched: 6 },
     { id: "t-p2-siding", p: "p2", title: "Siding & Exterior", cat: "Exterior", status: "blocked", pr: "high", qc: "pending", c: ["c4"], est: 5400, act: 0, due: 0, notes: "HOA color approval pending." },
 
@@ -434,7 +440,10 @@ export function normalizeDb(raw: unknown): DB {
   const d = raw as Record<string, unknown>;
   const s = (d.settings && typeof d.settings === "object" ? d.settings : {}) as Partial<AppSettings>;
   return {
-    projects: asArray<Project>(d.projects, seed.projects),
+    projects: asArray<Project>(d.projects, seed.projects).map((p) => ({
+      ...p,
+      squareFootage: typeof p.squareFootage === "number" ? p.squareFootage : 0,
+    })),
     contractors: asArray<Contractor>(d.contractors, seed.contractors),
     tasks: Array.isArray(d.tasks) ? d.tasks.map(migrateTask) : seed.tasks,
     expenses: asArray<ExpenseItem>(d.expenses, []),

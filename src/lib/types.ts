@@ -5,6 +5,12 @@
 // app stores. The Electron main process (db load/save, file
 // import) and the React renderer both import these types.
 
+import type { TaskPricing, PricingMode } from "./task-pricing";
+
+// Re-export so the rest of the app can import pricing types from the canonical
+// types module alongside everything else.
+export type { TaskPricing, PricingMode };
+
 export type UserRole = "admin" | "project_manager" | "viewer";
 
 export interface User {
@@ -79,6 +85,8 @@ export interface Project {
   estimatedARV: number;
   totalBudget: number;
   totalSpent: number;
+  /** Heated/living square footage — drives square-foot priced tasks (flooring). */
+  squareFootage: number;
   startDate: string;
   estimatedEndDate: string;
   completedDate?: string;
@@ -156,6 +164,10 @@ export interface TaskItem {
   photos?: StoredFile[];
   microtasks?: Microtask[];
   subfolderId?: string | null; // optional grouping within a project folder
+  /** True once the user types the cost by hand — protects it from sqft recalc. */
+  costManuallyEdited?: boolean;
+  /** Optional per-task pricing override (per_sqft / flat with custom rate). */
+  pricingOverride?: TaskPricing;
 }
 
 export interface Contractor {
